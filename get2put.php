@@ -2,7 +2,8 @@
 
 /** 
  * Пример использования:
- * URL: https://example.com/script.php?API_key=1234567890abcdef1234567890abcdef&TUNNEL_ID=12345
+ * URL:  https://example.com/script.php?API_key=1234567890abcdef1234567890abcdef&TUNNEL_ID=12345
+ * shell:  wget -O- "https://example.com/script.php?API_key=1234567890abcdef1234567890abcdef&TUNNEL_ID=12345"
  * Метод: GET
  * Параметры:
  *   - API_key: строка из 32 шестнадцатеричных символов
