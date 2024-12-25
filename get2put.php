@@ -15,6 +15,18 @@
 // Указываем базовый домен
 define('BASE_URL', 'https://6in4.ru/tunnel');
 
+// Ограничение частоты запросов
+session_start();
+if (!isset($_SESSION['last_request'])) {
+    $_SESSION['last_request'] = time();
+} elseif (time() - $_SESSION['last_request'] < 1) { // Ограничение: 1 запрос в секунду
+    logMessage("Слишком частые запросы от клиента.");
+    header('Content-Type: application/json');
+    echo json_encode(['status' => 'error', 'message' => 'Слишком частые запросы. Подождите перед следующим.']);
+    exit;
+}
+$_SESSION['last_request'] = time();
+
 // Функция для вывода сообщений на страницу
 function displayMessage($message)
 {
