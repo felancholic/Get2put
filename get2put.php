@@ -4,6 +4,7 @@
  * Пример использования:
  * URL:  https://example.com/script.php?API_key=1234567890abcdef1234567890abcdef&TUNNEL_ID=12345
  * shell:  wget -O- "https://example.com/script.php?API_key=1234567890abcdef1234567890abcdef&TUNNEL_ID=12345"
+ * 
  * Метод: GET
  * Параметры:
  *   - API_key: строка из 32 шестнадцатеричных символов
@@ -14,81 +15,70 @@
 // Указываем базовый домен
 define('BASE_URL', 'https://6in4.ru/tunnel');
 
-// Указываем путь к файлу лога
-define('LOG_FILE', 'log.txt');
+// Функция для вывода сообщений на страницу
+function displayMessage($message)
+{
+    echo "<pre>$message</pre>";
+}
 
-// Опция для включения/отключения логирования
-define('ENABLE_LOGGING', true);
-
-// Проверяем, что параметры переданы через GET
+// Проверяем, что параметры переданы через GET или в пути
+$pathInfo = isset($_SERVER['PATH_INFO']) ? trim($_SERVER['PATH_INFO'], '/') : '';
 if (isset($_GET['API_key']) && isset($_GET['TUNNEL_ID'])) {
-    try {
-        // Получаем значения параметров из GET-запроса и фильтруем их
-        $API_key = filter_input(INPUT_GET, 'API_key', FILTER_SANITIZE_STRING);
-        $TUNNEL_ID = filter_input(INPUT_GET, 'TUNNEL_ID', FILTER_SANITIZE_STRING);
-
-        // Логируем полученные параметры
-        logMessage("Получены параметры: API_key = $API_key, TUNNEL_ID = $TUNNEL_ID");
-
-        // Проверка API_key на соответствие формату: 32 символа в шестнадцатеричной системе
-        if (!preg_match('/^[a-f0-9]{32}$/i', $API_key)) {
-            throw new Exception("API_key должен быть строкой из 32 шестнадцатеричных символов.");
-        }
-
-        // Логируем успешную проверку API_key
-        logMessage("API_key проверен успешно.");
-
-        // Проверка TUNNEL_ID на соответствие только десятичным цифрам
-        if (!preg_match('/^\d+$/', $TUNNEL_ID)) {
-            throw new Exception("TUNNEL_ID должен содержать только десятичные цифры.");
-        }
-
-        // Логируем успешную проверку TUNNEL_ID
-        logMessage("TUNNEL_ID проверен успешно.");
-
-        // Формируем URL для запроса
-        $url = BASE_URL . "/$API_key/$TUNNEL_ID";
-        logMessage("Формируется URL для запроса: $url");
-
-        // Получаем IP-адрес клиента
-        $client_ip = $_SERVER['REMOTE_ADDR'];
-
-        // Логируем IP-адрес клиента
-        logMessage("IP-адрес клиента: $client_ip");
-
-        // Приведение IP-адреса к формату IPv4, если это возможно
-        if (filter_var($client_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
-            $client_ip = convertIpv6ToIpv4($client_ip);
-            logMessage("IPv6 адрес клиента преобразован в IPv4: $client_ip");
-        }
-
-        // Проверяем, что IP является валидным IPv4
-        if (!filter_var($client_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-            throw new Exception("IP-адрес клиента не является валидным IPv4.");
-        }
-
-        // Логируем проверку IPv4
-        logMessage("IP-адрес клиента является валидным IPv4.");
-
-        // Формируем данные для PUT-запроса
-        $data = json_encode(['ipv4remote' => $client_ip]);
-
-        // Выполняем PUT-запрос
-        $response = executePutRequest($url, $data);
-
-        // Выводим успешный ответ
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'success', 'response' => json_decode($response, true)]);
-    } catch (Exception $e) {
-        // Логируем ошибку
-        logMessage("Ошибка: " . $e->getMessage());
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
-    }
+    $API_key = filter_input(INPUT_GET, 'API_key', FILTER_SANITIZE_STRING);
+    $TUNNEL_ID = filter_input(INPUT_GET, 'TUNNEL_ID', FILTER_SANITIZE_STRING);
+} elseif (preg_match('#^([a-f0-9]{32})/(\d+)$#i', $pathInfo, $matches)) {
+    $API_key = $matches[1];
+    $TUNNEL_ID = $matches[2];
 } else {
-    logMessage("Необходимые параметры не переданы.");
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Необходимые параметры не переданы.']);
+    displayMessage("Необходимые параметры не переданы.");
+    exit;
+}
+
+try {
+    // Логируем полученные параметры
+    displayMessage("Получены параметры: API_key = $API_key, TUNNEL_ID = $TUNNEL_ID");
+
+    // Проверка API_key на соответствие формату: 32 символа в шестнадцатеричной системе
+    if (!preg_match('/^[a-f0-9]{32}$/i', $API_key)) {
+        throw new Exception("API_key должен быть строкой из 32 шестнадцатеричных символов.");
+    }
+    displayMessage("API_key проверен успешно.");
+
+    // Проверка TUNNEL_ID на соответствие только десятичным цифрам
+    if (!preg_match('/^\d+$/', $TUNNEL_ID)) {
+        throw new Exception("TUNNEL_ID должен содержать только десятичные цифры.");
+    }
+    displayMessage("TUNNEL_ID проверен успешно.");
+
+    // Формируем URL для запроса
+    $url = BASE_URL . "/$API_key/$TUNNEL_ID";
+    displayMessage("Формируется URL для запроса: $url");
+
+    // Получаем IP-адрес клиента
+    $client_ip = $_SERVER['REMOTE_ADDR'];
+    displayMessage("IP-адрес клиента: $client_ip");
+
+    // Приведение IP-адреса к формату IPv4, если это возможно
+    if (filter_var($client_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+        $client_ip = convertIpv6ToIpv4($client_ip);
+        displayMessage("IPv6 адрес клиента преобразован в IPv4: $client_ip");
+    }
+
+    // Проверяем, что IP является валидным IPv4
+    if (!filter_var($client_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        throw new Exception("IP-адрес клиента не является валидным IPv4.");
+    }
+    displayMessage("IP-адрес клиента является валидным IPv4.");
+
+    // Формируем данные для PUT-запроса
+    $data = json_encode(['ipv4remote' => $client_ip]);
+
+    // Выполняем PUT-запрос
+    $response = executePutRequest($url, $data);
+    displayMessage("Ответ сервера: " . htmlspecialchars($response));
+} catch (Exception $e) {
+    displayMessage("Ошибка: " . $e->getMessage());
+    exit;
 }
 
 // Функция для выполнения PUT-запроса
@@ -137,15 +127,3 @@ function convertIpv6ToIpv4($ipv6)
     }
     return $ipv6;
 }
-
-// Функция для записи сообщений в лог-файл
-function logMessage($message)
-{
-    if (!ENABLE_LOGGING) {
-        return;
-    }
-    $timestamp = date('Y-m-d H:i:s');
-    $logMessage = "[$timestamp] $message\n";
-    file_put_contents(LOG_FILE, $logMessage, FILE_APPEND);
-}
-
