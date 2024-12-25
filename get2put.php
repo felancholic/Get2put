@@ -1,12 +1,13 @@
 <?php
 
-/**
+/** 
  * Пример использования:
  * URL: https://example.com/script.php?API_key=1234567890abcdef1234567890abcdef&TUNNEL_ID=12345
  * Метод: GET
  * Параметры:
  *   - API_key: строка из 32 шестнадцатеричных символов
  *   - TUNNEL_ID: числовое значение
+ * 
  */
 
 // Указываем базовый домен
@@ -115,7 +116,10 @@ function executePutRequest($url, $data)
     }
 
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    if ($httpCode !== 200) {
+    if ($httpCode === 404) {
+        curl_close($ch);
+        throw new Exception("Недействительная пара KEY / ID");
+    } elseif ($httpCode !== 200) {
         curl_close($ch);
         throw new Exception("HTTP-код ответа: $httpCode");
     }
@@ -143,3 +147,4 @@ function logMessage($message)
     $logMessage = "[$timestamp] $message\n";
     file_put_contents(LOG_FILE, $logMessage, FILE_APPEND);
 }
+
