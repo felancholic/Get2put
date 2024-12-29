@@ -3,7 +3,7 @@
 /** 
  * Пример использования:
  * URL:  https://example.com/script.php?API_key=1234567890abcdef1234567890abcdef&TUNNEL_ID=12345
- * shell:  wget -O- "https://example.com/script.php?API_key=1234567890abcdef1234567890abcdef&TUNNEL_ID=12345"
+ * shell:  wget -O- --no-check-certificate "https://6in4.mywire.org/?API_key=1234567890abcdef1234567890abcdef&TUNNEL_ID=12345"
  * 
  * Метод: GET
  * Параметры:
